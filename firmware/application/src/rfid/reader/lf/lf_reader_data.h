@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-// #define debug410x
+#define debug410x
 
 #ifdef __cplusplus
 extern "C" {

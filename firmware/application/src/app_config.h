@@ -2,8 +2,8 @@
 
 
 // version code, 1byte, max = 0 -> 255
-//#define APP_FW_VER_MAJOR   2
-//#define APP_FW_VER_MINOR   0
+#define APP_FW_VER_MAJOR   42
+#define APP_FW_VER_MINOR   42
 #if !(defined APP_FW_VER_MAJOR && defined APP_FW_VER_MINOR)
 #error You need to define APP_FW_VER_MAJOR and APP_FW_VER_MINOR
 #endif
