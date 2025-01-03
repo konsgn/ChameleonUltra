@@ -10,3 +10,6 @@
 
 // Merge major and minor version code to U16 value.
 #define FW_VER_NUM VER_CODE_TO_NUM(APP_FW_VER_MAJOR, APP_FW_VER_MINOR)
+
+// #define PROJECT_CHAMELEON_ULTRA
+#define NO_SLEEP_TILL_CHAMELEON

@@ -331,10 +331,11 @@ ifeq	(${CURRENT_DEVICE_TYPE}, ${CHAMELEON_ULTRA})
     $(PROJ_DIR)/rfid/reader/hf/rc522.c \
     $(PROJ_DIR)/rfid/reader/lf/data_utils.c \
     $(PROJ_DIR)/rfid/reader/lf/lf_125khz_radio.c \
-    $(PROJ_DIR)/rfid/reader/lf/lf_em410x_data.c \
+    $(PROJ_DIR)/rfid/reader/lf/lf_hid_26_data.c \
     $(PROJ_DIR)/rfid/reader/lf/lf_reader_data.c \
     $(PROJ_DIR)/rfid/reader/lf/lf_reader_main.c \
     $(PROJ_DIR)/rfid/reader/lf/lf_t55xx_data.c \
+    #$(PROJ_DIR)/rfid/reader/lf/lf_em410x_data.c \
 
   INC_FOLDERS +=\
     ${PROJ_DIR}/rfid/reader/ \

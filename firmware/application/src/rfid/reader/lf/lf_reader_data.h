@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #define debug410x
+#define debughid
 
 #ifdef __cplusplus
 extern "C" {

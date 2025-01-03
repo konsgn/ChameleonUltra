@@ -8,6 +8,7 @@
 
 #include "app_timer.h"
 #include "app_usbd.h"
+#include "app_config.h"
 #include "app_util_platform.h"
 #include "nrf_delay.h"
 #include "nrf_drv_gpiote.h"
@@ -241,6 +242,7 @@ static void button_init(void) {
 
 /**@brief The implementation function to enter deep hibernation
  */
+#ifndef NO_SLEEP_TILL_CHAMELEON
 static void system_off_enter(void) {
     ret_code_t ret;
     m_system_off_processing = true;
@@ -387,7 +389,12 @@ static void system_off_enter(void) {
     // jlink connection, power consumption will rise, and hibernation will also be stuck in this step.
     while (1)
         NRF_LOG_PROCESS();
+//#else
+    bsp_delay_ms(1000);
+    NRF_LOG_INFO(".");
 }
+#else 
+#endif
 
 /**
  *@brief :Detection of wake-up source
@@ -830,6 +837,10 @@ static void ble_passkey_init(void) {
     }
 }
 
+// static void noop(void) {
+//     bsp_delay_ms(100);
+// }
+
 /**@brief Application main function.
  */
 int main(void) {
@@ -886,6 +897,11 @@ int main(void) {
         // No task to process, system sleep enter.
         // If system idle sometime, we can enter deep sleep state.
         // Some task process done, we can enter cpu sleep state.
+#ifndef NO_SLEEP_TILL_CHAMELEON
         sleep_system_run(system_off_enter, nrf_pwr_mgmt_run);
+#else
+        // sleep_system_run(system_off_enter, noop);
+        bsp_delay_ms(100); // Limit is 32 bit value of us / clock. (see nrfx_coredep_delay_us)        bsp_delay_ms(100); // Limit is 32 bit value of us / clock. (see nrfx_coredep_delay_us)
+#endif
     }
 }
