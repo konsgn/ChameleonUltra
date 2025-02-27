@@ -9,31 +9,29 @@
 extern "C"
 {
 #endif
-// #define CARD_BUF_BYTES_SIZE 10       // Card byte buffer size (manchestered)
 
-// #define RAW_BUF_SIZE 24           // The maximum record buffer (used in filtering data before)
-// #define CARD_BUF_SIZE 8           // Card size
 
-// typedef struct {
-//     uint8_t rawa[RAW_BUF_SIZE];    // The time difference between recording changes
-//     uint8_t rawb[RAW_BUF_SIZE];    // The time difference between recording changes
-//     uint8_t hexbuf[CARD_BUF_SIZE]; // manchester card data
-//     uint8_t capture_started_bit;
+#define RAW_BUF_SIZE 128           // The maximum record buffer (used in filtering data before)
+#define CARD_BUF_SIZE 16          // Card size of raw bits needing manchester decoding.
+#define CARD_BUF_BYTES_SIZE 8     // Card byte buffer size (decoded from manchester data)
 
-#define CARD_BUF_BYTES_SIZE 5       // Card byte buffer size
-
-#define RAW_BUF_SIZE 24           // The maximum record buffer
-#define CARD_BUF_SIZE 8           // Card size
+typedef enum _hid_decode_state{
+    state_header_hunt=0, // starting our hunt for the non-manchester 3 "high" bits.
+    state_bit_pull, // 3 "high" bits found, manchester data started.
+    state_reset_needed, // unexpected length of bits, need reset.
+    state_max_read_complete // we filled the max len of bits.. what now?
+} hid_decode_state;
 
 typedef struct {
-    uint8_t rawa[RAW_BUF_SIZE];    // The time difference between recording changes
-    uint8_t rawb[RAW_BUF_SIZE];    // The time difference between recording changes
-    uint8_t hexbuf[CARD_BUF_SIZE]; // Patriotic card data
+    uint8_t rawa[RAW_BUF_SIZE];    // The bit groups length captured raw.
+    uint8_t rawb[RAW_BUF_SIZE];    // The bit groups length captured raw.
+    uint8_t hexbuf[CARD_BUF_SIZE]; // manchester card data
     uint8_t startbit;
-} RAWBUF_TYPE_S;
+    hid_decode_state decode_state;
+} RAWBUF_TYPE_HID;
 
 //Card data
-extern uint8_t cardbufbyte[CARD_BUF_BYTES_SIZE];
+extern uint8_t cardbufbyte[CARD_BUF_BYTES_SIZE]; // decoded manchester data
 
 
 // void init_hid26_hw(void);

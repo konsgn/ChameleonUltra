@@ -15,68 +15,68 @@
 NRF_LOG_MODULE_REGISTER();
 
 
-static RAWBUF_TYPE_S carddata;
+static RAWBUF_TYPE_HID carddata;
 static volatile uint8_t dataindex = 0;          //Record changes along the number of times
 uint8_t cardbufbyte[CARD_BUF_BYTES_SIZE];   //Card data
 
 #ifdef debughid
-uint8_t datatest[256] = { 0x00 };
+uint8_t datatest[128] = { 0x00 };
 #endif
 
 
 //Process card data, enter raw Buffer's starting position 2 position (21111 ...)
 //After processing the card data, put cardbuf, return 5 normal analysis
 //pdata is rawbuffer
-uint8_t mcst(RAWBUF_TYPE_S *Pdata) {
-    uint8_t sync = 1;      //After the current interval process is processed, is it on the judgment line
-    uint8_t cardindex = 0; //Record change number
-    for (int i = Pdata->startbit; i < RAW_BUF_SIZE * 8; i++) {
-        uint8_t thisbit = readbit(Pdata->rawa, Pdata->rawb, i);
-        switch (sync) {
-            case 1: //Synchronous state
-                switch (thisbit) {
-                    case 0: //TheSynchronousState1T,Add1Digit0,StillSynchronize
-                        writebit(Pdata->hexbuf, Pdata->hexbuf, cardindex, 0);
-                        cardindex++;
-                        break;
-                    case 1: // Synchronous status 1.5T, add 1 digit 1, switch to non -synchronized state
-                        writebit(Pdata->hexbuf, Pdata->hexbuf, cardindex, 1);
-                        cardindex++;
-                        sync = 0;
-                        break;
-                    case 2: //Synchronous2T,Add2Digits10,StillSynchronize
-                        writebit(Pdata->hexbuf, Pdata->hexbuf, cardindex, 1);
-                        cardindex++;
-                        writebit(Pdata->hexbuf, Pdata->hexbuf, cardindex, 0);
-                        cardindex++;
-                        break;
-                    default:
-                        return 0;
-                }
-                break;
-            case 0: //Non -synchronous state
-                switch (thisbit) {
-                    case 0: //1TInNonSynchronousState,Add1Digit1,StillNonSynchronous
-                        writebit(Pdata->hexbuf, Pdata->hexbuf, cardindex, 1);
-                        cardindex++;
-                        break;
-                    case 1: // In non -synchronous status 1.5T, add 2 digits 10, switch to the synchronous state
-                        writebit(Pdata->hexbuf, Pdata->hexbuf, cardindex, 1);
-                        cardindex++;
-                        writebit(Pdata->hexbuf, Pdata->hexbuf, cardindex, 0);
-                        cardindex++;
-                        sync = 1;
-                        break;
-                    case 2: //The2TOfTheNonSynchronousState,ItIsImpossibleToOccur,ReportAnError
-                        return 0;
-                    default:
-                        return 0;
-                }
-                break;
-        }
-        if (cardindex >= CARD_BUF_SIZE * 8)
-            break;
-    }
+uint8_t mcst(RAWBUF_TYPE_HID *Pdata) {
+    // uint8_t sync = 1;      //After the current interval process is processed, is it on the judgment line
+    // uint8_t cardindex = 0; //Record change number
+    // for (int i = Pdata->startbit; i < RAW_BUF_SIZE * 8; i++) {
+    //     uint8_t thisbit = readbit(Pdata->rawa, Pdata->rawb, i);
+    //     switch (sync) {
+    //         case 1: //Synchronous state
+    //             switch (thisbit) {
+    //                 case 0: //TheSynchronousState1T,Add1Digit0,StillSynchronize
+    //                     writebit(Pdata->hexbuf, Pdata->hexbuf, cardindex, 0);
+    //                     cardindex++;
+    //                     break;
+    //                 case 1: // Synchronous status 1.5T, add 1 digit 1, switch to non -synchronized state
+    //                     writebit(Pdata->hexbuf, Pdata->hexbuf, cardindex, 1);
+    //                     cardindex++;
+    //                     sync = 0;
+    //                     break;
+    //                 case 2: //Synchronous2T,Add2Digits10,StillSynchronize
+    //                     writebit(Pdata->hexbuf, Pdata->hexbuf, cardindex, 1);
+    //                     cardindex++;
+    //                     writebit(Pdata->hexbuf, Pdata->hexbuf, cardindex, 0);
+    //                     cardindex++;
+    //                     break;
+    //                 default:
+    //                     return 0;
+    //             }
+    //             break;
+    //         case 0: //Non -synchronous state
+    //             switch (thisbit) {
+    //                 case 0: //1TInNonSynchronousState,Add1Digit1,StillNonSynchronous
+    //                     writebit(Pdata->hexbuf, Pdata->hexbuf, cardindex, 1);
+    //                     cardindex++;
+    //                     break;
+    //                 case 1: // In non -synchronous status 1.5T, add 2 digits 10, switch to the synchronous state
+    //                     writebit(Pdata->hexbuf, Pdata->hexbuf, cardindex, 1);
+    //                     cardindex++;
+    //                     writebit(Pdata->hexbuf, Pdata->hexbuf, cardindex, 0);
+    //                     cardindex++;
+    //                     sync = 1;
+    //                     break;
+    //                 case 2: //The2TOfTheNonSynchronousState,ItIsImpossibleToOccur,ReportAnError
+    //                     return 0;
+    //                 default:
+    //                     return 0;
+    //             }
+    //             break;
+    //     }
+    //     if (cardindex >= CARD_BUF_SIZE * 8)
+    //         break;
+    // }
     return 1;
 }
 
@@ -271,101 +271,145 @@ void em410x_encoder(uint8_t *pData, uint8_t *pOut) {
 
 // Reading the card function, you need to stop calling, return 0 to read the card, 1 is to read
 uint8_t hid26_acquire(void) {
-    if (dataindex >= RAW_BUF_SIZE * 8) {
-#ifdef debughid
-        {
-            for (int i = 0; i < RAW_BUF_SIZE * 8; i++) {
-                NRF_LOG_INFO("%d ", datatest[i]); //readbit(carddata.rawa, carddata.rawb, i));
-            }
-            NRF_LOG_INFO("///raw data\r\n");
-                // char  buffer[250];
-                // char* pbuffer = (char*)&buffer;
-                // for (int i = 0; i < (dataindex/3); i++) {
-                //     NRF_LOG_INFO("%d %d %d",datatest[i],datatest[i+1],datatest[i+1]);
-                //     pbuffer += sprintf(pbuffer,"%d %d %d",datatest[i],datatest[i+1],datatest[i+1]);
-                // }
-                // *pbuffer = 0;
-                // pbuffer = (char*)&buffer;
-                // NRF_LOG_INFO("$%s", pbuffer);
-            NRF_LOG_INFO("///time data\r\n");
-        }
-#endif
-        //Looking for goals 0 1111 1111
-        carddata.startbit = 255;
-        for (int i = 0; i < (RAW_BUF_SIZE * 8) - 8; i++) {
-            if (readbit(carddata.rawa, carddata.rawb, i) == 1) {
-                carddata.startbit = 0;
-                for (int j = 1; j < 8; j++) {
-                    carddata.startbit += (uint8_t)readbit(carddata.rawa, carddata.rawb, i + j);
-                }
-                if (carddata.startbit == 0) {
-                    carddata.startbit = i;
-                    break;
-                } else {
-                    carddata.startbit = 255;
-                }
-            }
-        }
-        // If you find the right beginning to deal with it
-        if (carddata.startbit != 255 && carddata.startbit < (RAW_BUF_SIZE * 8) - 64) {
-            //Guarantee card data can be fully analyzed
-            //NRF_LOG_INFO("do mac,start: %d\r\n",startbit);
-            if (mcst(&carddata) == 1) {
-                //Card normal analysis
-#ifdef debughid
-                {
-                    for (int i = 0; i < CARD_BUF_SIZE; i++) {
-                        NRF_LOG_INFO("%02X", carddata.hexbuf[i]);
-                    }
-                    NRF_LOG_INFO("///card data\r\n");
-                }
-#endif
-                if (hid26_decoder(carddata.hexbuf, CARD_BUF_SIZE, cardbufbyte)) {
-                    //Card data check passes
-#ifdef debughid
-                    for (int i = 0; i < 5; i++) {
-                        NRF_LOG_INFO("%02X", (int)cardbufbyte[i]);
-                    }
-                    NRF_LOG_INFO("///card dataBYTE\r\n");
-#endif
-                    dataindex = 0;
-                    return 1;
-                }
-            }
-        }
-        // Start a new cycle
-        dataindex = 0;
-    }
+    // NRF_LOG_INFO("idx:%d state:%d,raw0:%d", 
+    //                 dataindex, 
+    //                 carddata.decode_state,
+    //                 carddata.rawa[0]); //readbit(carddata.rawa, carddata.rawb, i));
+//     if (dataindex >= 80) {
+// #ifdef debughid
+//         {
+//             for (int i = 0; i < RAW_BUF_SIZE; i++) {
+//                 NRF_LOG_INFO("%d for %d ",carddata.rawb[i],carddata.rawa[i]); //readbit(carddata.rawa, carddata.rawb, i));
+//             }
+//             NRF_LOG_INFO("///raw data\r\n");
+//                 // char  buffer[250];
+//                 // char* pbuffer = (char*)&buffer;
+//                 // for (int i = 0; i < (dataindex/3); i++) {
+//                 //     NRF_LOG_INFO("%d %d %d",datatest[i],datatest[i+1],datatest[i+1]);
+//                 //     pbuffer += sprintf(pbuffer,"%d %d %d",datatest[i],datatest[i+1],datatest[i+1]);
+//                 // }
+//                 // *pbuffer = 0;
+//                 // pbuffer = (char*)&buffer;
+//                 // NRF_LOG_INFO("$%s", pbuffer);
+//             NRF_LOG_INFO("///time data\r\n");
+//         }
+// #endif
+//         //Looking for goals 0 1111 1111
+//         carddata.startbit = 255;
+//         for (int i = 0; i < (RAW_BUF_SIZE * 8) - 8; i++) {
+//             if (readbit(carddata.rawa, carddata.rawb, i) == 1) {
+//                 carddata.startbit = 0;
+//                 for (int j = 1; j < 8; j++) {
+//                     carddata.startbit += (uint8_t)readbit(carddata.rawa, carddata.rawb, i + j);
+//                 }
+//                 if (carddata.startbit == 0) {
+//                     carddata.startbit = i;
+//                     break;
+//                 } else {
+//                     carddata.startbit = 255;
+//                 }
+//             }
+//         }
+//         // If you find the right beginning to deal with it
+//         if (carddata.startbit != 255 && carddata.startbit < (RAW_BUF_SIZE * 8) - 64) {
+//             //Guarantee card data can be fully analyzed
+//             //NRF_LOG_INFO("do mac,start: %d\r\n",startbit);
+//             if (mcst(&carddata) == 1) {
+//                 //Card normal analysis
+// #ifdef debughid
+//                 {
+//                     for (int i = 0; i < CARD_BUF_SIZE; i++) {
+//                         NRF_LOG_INFO("%02X", carddata.hexbuf[i]);
+//                     }
+//                     NRF_LOG_INFO("///card data\r\n");
+//                 }
+// #endif
+//                 if (hid26_decoder(carddata.hexbuf, CARD_BUF_SIZE, cardbufbyte)) {
+//                     //Card data check passes
+// #ifdef debughid
+//                     for (int i = 0; i < 5; i++) {
+//                         NRF_LOG_INFO("%02X", (int)cardbufbyte[i]);
+//                     }
+//                     NRF_LOG_INFO("///card dataBYTE\r\n");
+// #endif
+//                     dataindex = 0;
+//                     return 1;
+//                 }
+//             }
+//         }
+//         // Start a new cycle
+//         dataindex = 0;
+    // }
     return 0;
 }
 
 //GPIO interrupt recovery function is used to detect the descending edge
 void GPIO_INT0_callback(void) {
+    static uint16_t thisGroupCount = 0;
+    static uint32_t lasttimelen = 0;
     static uint32_t thistimelen = 0;
     thistimelen = get_lf_counter_value();
+    clear_lf_counter_value();
+    if (thistimelen == 9) thistimelen=lasttimelen;
+    if (thistimelen == lasttimelen) {
+        thisGroupCount++;
+        lasttimelen = thistimelen;
+        return;
+    }
+    carddata.rawa[dataindex]=thisGroupCount;
+    carddata.rawb[dataindex]=lasttimelen;
+    dataindex+=1;
+    thisGroupCount=1;
+    lasttimelen = thistimelen;
+
+    // switch(carddata.decode_state){
+    //     case state_header_hunt:{ // 15 counts of 10 times is the fsk start of data header
+    //         if (thisGroupCount>=15 && thistimelen == 8 && lasttimelen == 10){
+    //             carddata.decode_state = state_bit_pull;
+    //             thisGroupCount = 1; // to capture current 8 bit
+    //             dataindex = 0;
+    //         }
+    //         if (thistimelen==lasttimelen) thisGroupCount++;
+    //         else thisGroupCount =1;
+    //         break;
+    //     }
+    //     case state_bit_pull:{
+    //         if (thistimelen == 9) thistimelen=lasttimelen;
+    //         if (thistimelen != lasttimelen){
+    //             carddata.rawa[dataindex]=thisGroupCount;
+    //             dataindex++;
+    //             thisGroupCount=1;
+    //         }
+    //         else thisGroupCount++;
+    //         if (thisGroupCount>10) carddata.decode_state = state_reset_needed;
+    //         break;
+    //     }
+    //     default:
+    //         break;
+    // }
 
     // If count is greater than 12, reset the array pointer
 
-    if (thistimelen > 2) { // was 47
-        clear_lf_counter_value();
-        static uint8_t cons_temp = 0;
-        if (dataindex < RAW_BUF_SIZE * 8) {
-            if (48 <= thistimelen && thistimelen <= 80) {
-                cons_temp = 0;
-            } else if (80 <= thistimelen && thistimelen <= 112) {
-                cons_temp = 1;
-            } else if (112 <= thistimelen && thistimelen <= 144) {
-                cons_temp = 2;
-            } else {
-                cons_temp = 3;
-            }
-            writebit(carddata.rawa, carddata.rawb, dataindex, cons_temp);
-#ifdef debughid
-            datatest[dataindex] = thistimelen;
-#endif
-            dataindex++;
-        }
-    }
+//     if (thistimelen > 2) { // was 47
+//         clear_lf_counter_value();
+//         static uint8_t cons_temp = 0;
+//         if (dataindex < RAW_BUF_SIZE * 8) {
+//             if (48 <= thistimelen && thistimelen <= 80) {
+//                 cons_temp = 0;
+//             } else if (80 <= thistimelen && thistimelen <= 112) {
+//                 cons_temp = 1;
+//             } else if (112 <= thistimelen && thistimelen <= 144) {
+//                 cons_temp = 2;
+//             } else {
+//                 cons_temp = 3;
+//             }
+//             writebit(carddata.rawa, carddata.rawb, dataindex, cons_temp);
+// #ifdef debughid
+//             datatest[dataindex] = thistimelen;
+// #endif
+//             dataindex++;
+//         }
+//     }
 
 }
 
@@ -387,8 +431,9 @@ void init_em410x_hw(void) {
 uint8_t em410x_read(uint8_t *uid, uint32_t timeout_ms) {
     uint8_t ret = 0;
 
-    init_hid26_hw();           // Initialized decline along the sampling recovery function
     start_lf_125khz_radio();    // Start 125kHz modulation
+    bsp_delay_ms(500); // allow the card to warm up.. otherwise first bits come in too fast
+    init_hid26_hw();           // Initialized decline along the sampling recovery function
 
     // Reading the card during timeout
     autotimer *p_at = bsp_obtain_timer(0);
@@ -409,6 +454,10 @@ uint8_t em410x_read(uint8_t *uid, uint32_t timeout_ms) {
 
     if (ret != 1) {  // If the card is not searched, it means that the timeout is over. We must manually end the card reader here.
         stop_lf_125khz_radio();
+    }
+
+    for (int i = 0; i < RAW_BUF_SIZE; i++) {
+        NRF_LOG_INFO("%d for %d ",carddata.rawb[i],carddata.rawa[i]); //readbit(carddata.rawa, carddata.rawb, i));
     }
 
     dataindex = 0;  // After the end, keep in mind the index of resetting data
